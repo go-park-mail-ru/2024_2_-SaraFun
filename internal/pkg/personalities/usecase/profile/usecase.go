@@ -33,7 +33,6 @@ func (u *UseCase) CreateProfile(ctx context.Context, profile models.Profile) (in
 	if err != nil {
 		return -1, fmt.Errorf("get age error: %w", err)
 	}
-	u.logger.Info("age", zap.Int("age", age))
 	profile.Age = age
 	err = checkAge(profile.Age)
 	if err != nil {

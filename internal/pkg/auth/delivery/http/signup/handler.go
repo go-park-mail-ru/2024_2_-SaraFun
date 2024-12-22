@@ -8,7 +8,6 @@ import (
 	generatedPayments "github.com/go-park-mail-ru/2024_2_SaraFun/internal/pkg/payments/delivery/grpc/gen"
 	generatedPersonalities "github.com/go-park-mail-ru/2024_2_SaraFun/internal/pkg/personalities/delivery/grpc/gen"
 	"github.com/go-park-mail-ru/2024_2_SaraFun/internal/utils/consts"
-	"github.com/go-park-mail-ru/2024_2_SaraFun/internal/utils/hashing"
 	"github.com/mailru/easyjson"
 	"go.uber.org/zap"
 	"net/http"
@@ -69,6 +68,7 @@ func NewHandler(personalitiesClient generatedPersonalities.PersonalitiesClient,
 
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	h.logger.Info("ctx", zap.Any("ctx", ctx))
 	req_id := ctx.Value(consts.RequestIDKey).(string)
 	h.logger.Info("Handling request", zap.String("request_id", req_id))
 	if r.Method != http.MethodPost {
@@ -103,6 +103,8 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	user.Sanitize()
 	profile.Sanitize()
+	h.logger.Info("user", zap.Any("user", user))
+	h.logger.Info("profile", zap.Any("profile", profile))
 	//personalitiesGRPC
 	checkUsernameRequest := &generatedPersonalities.CheckUsernameExistsRequest{Username: user.Username}
 	exists, err := h.personalitiesClient.CheckUsernameExists(ctx, checkUsernameRequest)
@@ -116,7 +118,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Пользователь с таким никнеймом уже существует", http.StatusBadRequest)
 		return
 	}
-
+	h.logger.Info("exists", zap.Any("exists", exists))
 	//personalitiesGRPC
 	genProfile := &generatedPersonalities.Profile{ID: int32(request.Profile.ID),
 		FirstName: profile.FirstName,
@@ -135,14 +137,15 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//h.logger.Info("hash start")
 	user.Profile = int(profileId.ProfileId)
-	hashedPass, err := hashing.HashPassword(user.Password)
-	if err != nil {
-		h.logger.Error("failed to hash password", zap.Error(err))
-		http.Error(w, "bad password", http.StatusBadRequest)
-		return
-	}
-	user.Password = hashedPass
+	//hashedPass, err := hashing.HashPassword(user.Password)
+	//if err != nil {
+	//	h.logger.Error("failed to hash password", zap.Error(err))
+	//	http.Error(w, "bad password", http.StatusBadRequest)
+	//	return
+	//}
+	//user.Password = hashedPass
 	// personalities grpc
 	genUser := &generatedPersonalities.User{
 		ID:       int32(user.ID),
@@ -151,6 +154,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		Email:    user.Email,
 		Profile:  int32(user.Profile),
 	}
+	h.logger.Info("ctx ctx ctx", zap.Any("ctx", ctx))
 	registerUserRequest := &generatedPersonalities.RegisterUserRequest{User: genUser}
 	id, err := h.personalitiesClient.RegisterUser(ctx, registerUserRequest)
 	if err != nil {

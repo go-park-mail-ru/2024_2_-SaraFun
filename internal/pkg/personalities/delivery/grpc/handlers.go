@@ -147,7 +147,6 @@ func (h *GrpcPersonalitiesHandler) CheckUsernameExists(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("grpc check username exists error: %w", err)
 	}
-
 	res := &generatedPersonalities.CheckUsernameExistsResponse{Exists: exists}
 	return res, nil
 }
@@ -164,8 +163,8 @@ func (h *GrpcPersonalitiesHandler) CreateProfile(ctx context.Context,
 		About:        in.Profile.About,
 		BirthdayDate: in.Profile.BirthDate,
 	}
+
 	profileId, err := h.profileUC.CreateProfile(ctx, profile)
-	h.logger.Info("create profile error", zap.Error(err))
 	if err != nil {
 		return nil, fmt.Errorf("grpc create profile error: %w", err)
 	}
